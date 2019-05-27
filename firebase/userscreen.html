@@ -1,0 +1,585 @@
+<html>
+
+    
+<html>
+
+   <head>
+    
+     <h1 id="title">TeamFinder</h1>
+    
+    
+    
+    
+    <script src="https://www.gstatic.com/firebasejs/5.7.3/firebase.js"></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous" href="css.css">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+        
+        // Initialize Firebase
+       var config = {
+            
+  apiKey: "AIzaSyApaA3prcXWu0xB1u9CtTfpqpod1zYfk7g",
+    authDomain: "test-dd34c.firebaseapp.com",
+    databaseURL: "https://test-dd34c.firebaseio.com",
+    projectId: "test-dd34c",
+    storageBucket: "test-dd34c.appspot.com",
+    messagingSenderId: "1082973996589"
+
+        };
+
+
+        firebase.initializeApp(config);
+                
+        // Check to see if you are logged in
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user == null) {
+                alert("Not logged in.");
+                
+                return;
+                
+            } else {
+                userId = user.uid;
+                name = user.displayName;
+                imageUrl = user.photoURL;
+                email = user.email;
+                    
+                // write user data to users
+                writeUserData(userId, name, email, imageUrl);
+                
+                
+                showProf();
+                
+           
+
+                firebase.database().ref('/users').once('value').then(function(snapshot) {
+                    var data = (snapshot.val());
+                    if (data == null) {
+                      console.log("No data found at /users/" + userId);  
+                    } else {
+                        
+                        var userdata = (snapshot.val());
+                        if (userdata != null) {
+                           dataarray = [data,userdata]
+                           console.log(dataarray)
+                           //updatetweets(dataarray); 
+                           //showUsers(dataarray);
+                            updateModal(dataarray);
+                        }
+                      //console.log(data)
+                      //updatetweets(data);
+                    }
+                });
+            } // end user null check
+        }); // end check auth state
+        
+        function encodeImageFileAsURL() {
+
+            var filesSelected = document.getElementById("inputFileToLoad").files;
+            if (filesSelected.length > 0) {
+                var fileToLoad = filesSelected[0];
+                var fileReader = new FileReader();
+                fileReader.onload = function(fileLoadedEvent) {
+                    var srcData = fileLoadedEvent.target.result; 
+                }
+                fileReader.readAsDataURL(fileToLoad);
+            }
+        } // end function
+        
+        // write user data
+        function writeUserData(userId, name, email, imageUrl) {
+            firebase.database().ref('users/' + userId).update({
+                email: email,
+                profile_picture : imageUrl,
+                userId: userId
+            });
+        }
+        
+        function showProf() {
+            var yourBio = "";
+           
+            firebase.database().ref('/users').once('value').then(function(snapshot) { 
+                var userdata = (snapshot.val());
+                    dataarray = [userdata]
+                    console.log(dataarray);
+                    users = dataarray[0];
+                
+                    for (var u in users) {
+                        if (users[u].userId == userId) {
+                            
+                            yourName = users[u].username;
+                            yourEmail = users[u].email;
+    
+                            if (users[u].newPic != null) {
+                                yourPic = users[u].newPic;
+                            }
+                            else {
+                                yourPic = users[u].profile_picture;
+                            }
+
+                            
+                            
+                            if (users[u].bio != null) {
+                                yourBio = users[u].bio;
+                            }
+                            else{
+                                yourBio = "N/A"
+                            }
+                            
+              lprof = document.getElementById("bio");   
+                            
+         var l = "<center><h2 style= 'font-family: monospace; color:black; font-size:30px ;'>" + yourName + "</h2><h2 style='margin-left: 10px;font-family: monospace;  '>" + yourBio + "</h2><br></center>";
+                            
+                            
+                            lprof.innerHTML = l;
+                       
+                            
+                            
+                            userprof = document.getElementById("prof");
+                            var p = "<center><img style='border-radius: 50%;' height='30%' src='" + yourPic + "'></center>";
+                            userprof.innerHTML = p;
+                            
+                           
+                        }
+                    } 
+                
+            });
+        }
+        
+        function chgBio() {
+            var newBio = document.getElementById("newbio").value;
+            
+            if (newBio.length > 100) {
+               
+            } 
+            else {
+                firebase.database().ref('users/' + userId).update({
+                    bio: newBio
+                });
+                
+            }
+            showProf();
+        }
+        
+       
+
+        
+        function signin() {
+            console.log("Signing in");
+            var provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithRedirect(provider).then(function(result) { 
+                window.location.replace("fbtest.html");
+            });
+        }
+        
+        function signout() {
+            console.log("Signing out");
+            firebase.auth().signOut().then(function() {
+            });
+        }
+        
+      
+        
+        function showPic(){
+            pic = document.getElementById("profilepic");
+            
+        }
+        
+  
+        
+   
+        
+        function updateModal(data){
+            users = data[1];
+            data = data[0];
+            photodiv = document.getElementById("modalphoto");
+            var modalcontent = "<center><p class='modaltext'>" + name + "</p><img id='profilepic' src='" + imageUrl + "'style='max-height:300px; border-radius: 10px'><p class='modaltext'></p></center>";
+            var yourPic = "";
+            
+            
+            var updated = false;
+            
+            for (var u in data) {
+                
+                if (users[u].userId = userId && !updated){
+                    
+                    updated = true;
+                    
+                    if (users[u].bio != null) {
+                        yourBio = users[u].bio;
+                    }
+                    else{
+                        yourBio = "N/A"
+                    }
+
+                  
+
+                   
+
+                }
+                
+            }
+            
+        }
+        
+        
+    </script>
+
+    <body>
+
+        
+
+        
+        
+        
+        
+        <link rel="stylesheet" 
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<div class="icon-bar">
+  <a class="active" href="homepage.html"><i class="fa fa-home"></i></a> 
+
+    
+     <div class="dropdown">
+    
+        <button class="dropbtn">   <i class="fa fa-search"> 
+ </i>
+    </button>
+
+        
+          
+        
+        
+        
+        <div class="dropdown-content">
+ <a href="hockey.html">Hockey</a> 
+<a href="soccer.html">Soccer</a> 
+<a href="rugby.html">Rugby</a> 
+<a href="football.html">Football</a> 
+<a href="cricket.html">Cricket</a> 
+<a href="rowing.html">Rowing</a> 
+<a href="baseball.html">Baseball</a> 
+    </div>
+  
+    </div> 
+    
+  <a href="userscreen.html"><i class="fa fa-user-circle"></i></a> 
+  <a  onclick="signin()"><i class="fa fa-sign-in"> </i></a>
+
+  <a onclick="signout()"><i class="fa fa-sign-out"></i></a> 
+   
+            
+</div>
+
+        
+        
+        
+            
+        <br>
+            
+        
+         <center id=bodytitle>Profile </center>
+
+      
+
+          <div id="bio"></div>
+                <div id="prof"></div>
+    
+        
+       
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <br>
+        
+        
+        
+          <center> <h2 id=editprof>Edit Profile:</h2></center> 
+        
+            
+          <center>  <h4 id = updatebio>Update Bio:</h4></center> 
+          <center>  <input type="text" id="newbio" placeholder="Put your bio here..."></center>
+    <br>
+            <center>   <button id=submitbutt onclick="chgBio()" class="newprofbtn">Submit</button> </center>
+            
+         
+            
+         
+        
+    
+        
+   
+        
+        
+  
+        
+        
+        
+        
+        
+        
+        
+        <style>
+        
+            
+            
+            #submitbutt {
+     
+        color: red;
+                font-family: monospace;
+        border-radius: 50%;
+               font-size: 20px;
+            
+                 border: 2px solid black; 
+          
+                    
+            
+                     
+
+                
+                
+                
+            }
+            
+            
+            
+            
+            #newbio 
+           {
+                
+              border-radius: 12px;
+                  border: 2px solid white; 
+               background-color: lightblue
+               
+                
+                
+                
+                
+               
+            }
+            
+            
+            
+            
+         
+            #updatebio
+            {
+                
+                 color: black;
+                font-family: monospace;
+               
+               font-size: 15px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+             
+       
+           
+                
+                
+                
+                
+                
+                
+                
+                
+            }
+            
+            
+            
+            
+            
+            #editprof { 
+                color: red;
+                font-family: monospace;
+                font-weight: bold;
+               font-size: 20px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                background-color: white;
+                 border: 2px solid black; 
+            margin-left: 400px;
+                 margin-right: 400px;
+                    
+            
+            
+            
+            
+            
+            }   
+           
+            
+            
+            
+            
+            
+            #bodytitle{
+                color: red;
+                font-family: monospace;
+                font-weight: bold;
+               font-size: 40px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                background-color: white;
+                 border: 2px solid black; 
+            margin-left: 200px;
+                 margin-right: 200px;
+                    
+                
+                
+                
+                
+            }
+            
+            
+        
+              #title{
+             background-color: #FFFFFF; 
+            color: #ffffff;
+            padding: 15px 32px;
+                border-radius: 12px;
+                  border: 2px solid #D80E0E; 
+            font-family: monospace;
+            font-size: 50px;
+             color:#D80E0E ;
+           text-align: center;
+            
+        }
+        
+        
+    .icon-bar {
+  width: 100%; /* Full-width */
+  background-color: #FFFFFF; /* Dark-grey background */
+  overflow: auto; /* Overflow due to float */
+}
+
+.icon-bar a {
+  float: left; /* Float links side by side */
+  text-align: center; /* Center-align text */
+  width: 284px; /* Equal width (5 icons with 20% width each = 100%) */
+  padding: 12px 0; /* Some top and bottom padding */
+  transition: all 0.3s ease; /* Add transition for hover effects */
+  color: black; /* White text color */
+  font-size: 36px; /* Increased font size */
+}
+
+.icon-bar a:hover {
+  background-color: #D80E0E; /* Add a hover color */
+}
+
+.active {
+  background-color: #D80E0E; /* Add an active/current color */
+}
+body {
+  font-family: "monospace";
+    color: white
+}
+
+
+
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+}
+      
+            
+            
+            
+            
+           
+            
+   /* The dropdown container */
+.dropdown {
+  float: left;
+  overflow: hidden;
+}
+
+/* Dropdown button */
+.dropdown .dropbtn {
+  font-size: 16px; 
+    
+  border: none;
+  outline: none;
+  color: black;
+    width:284px;
+  padding: 12px 0px;
+  background-color: inherit;
+  font-family: monospace; /* Important for vertical align on mobile phones */
+ 
+    font-size: 36px; /* Increased font size */
+}
+
+/* Add a red background color to navbar links on hover */
+.navbar a:hover, .dropdown:hover .dropbtn {
+  background-color: red;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 284px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+    font-family: monospace;
+
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  float: none;
+  color: black;
+    width:252px;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+/* Add a grey background color to dropdown links on hover */
+.dropdown-content a:hover {
+  background-color: #D80E0E;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;         
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+        
+        
+        
+        </style>
+        
+    
+            <body style="background-color:80ccff;">
+        
+        
+        
+    </body>
+
+    
+
+</html>
